@@ -3,7 +3,7 @@ use std::sync::{
     Arc, Mutex,
 };
 
-use crate::{error::SocketError, socket::Socket};
+use crate::{error::SocketError, listener::Listener, socket::Socket};
 
 macro_rules! rustln {
     () => {
@@ -18,6 +18,7 @@ macro_rules! rustln {
 #[derive(uniffi::Object)]
 pub struct FakeSocket {
     ip: String,
+    listener: Box<dyn Listener>,
 
     tx: SyncSender<String>,
     rx: Mutex<Receiver<String>>,
@@ -26,10 +27,11 @@ pub struct FakeSocket {
 #[uniffi::export]
 impl FakeSocket {
     #[uniffi::constructor]
-    pub fn new(ip: String) -> Arc<Self> {
+    pub fn new(ip: String, listener: Box<dyn Listener>) -> Arc<Self> {
         let (tx, rx) = mpsc::sync_channel(10);
         Arc::new(Self {
             ip: ip.to_owned(),
+            listener,
             tx,
             rx: Mutex::new(rx),
         })
@@ -56,6 +58,9 @@ impl Socket for FakeSocket {
             Ok(rx) => match rx.recv() {
                 Ok(data) => {
                     rustln!("read: ip = {}, data = {data}", self.ip);
+
+                    self.listener.on_received(data.clone());
+
                     Some(data)
                 }
                 Err(e) => {
