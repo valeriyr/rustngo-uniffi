@@ -1,0 +1,17 @@
+[package]
+name = "socket"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib"]
+name = "socket"
+
+[dependencies]
+thiserror = "1.0.50"
+uniffi = "0.25"
+
+[build-dependencies]
+uniffi = { version = "0.25", features = [ "build" ] }
